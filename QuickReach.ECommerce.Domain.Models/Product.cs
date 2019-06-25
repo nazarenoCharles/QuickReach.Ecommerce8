@@ -14,12 +14,12 @@ namespace QuickReach.ECommerce.Domain.Models
         [MaxLength(255)]
         public string Description { get; set; }
         [Required]
-        [MaxLength(40)]
         public decimal Price { get; set; }
         [Required]
         public int CategoryID { get; set; }
         public Category Category { get; set; }
         [Required]
         public string ImageURL{ get; set; }
+        
     }
 }

@@ -4,145 +4,237 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
+
 namespace QuickReach.ECommerce.Infra.Data.Tests
 {
     public class CategoryRepositoryTest
     {
+        #region Create_WithValidEntity_ShouldCreateDatabaseRecord
         [Fact]
         public void Create_WithValidEntity_ShouldCreateDatabaseRecord()
         {
-            //Arrange
-            var context = new ECommerceDbContext();
-            var sut = new CategoryRepository(context);
-            var category = new Category
+            // Arrange
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            var expected = new Category
             {
                 Name = "Shoes",
                 Description = "Shoes Department"
             };
-            //Act
-            sut.Create(category);
-            //Assert
-            Assert.True(category.ID != 0);
 
-            var entity = sut.Retrieve(category.ID);
-            Assert.NotNull(entity);
+            // Act
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                var sut = new CategoryRepository(context);
 
-            sut.Delete(category.ID);
+                sut.Create(expected);
+            }
+            // Assert
+            using (var context = new ECommerceDbContext(options))
+            {
+                var actual = context.Categories.Find(expected.ID);
+
+                Assert.NotNull(actual);
+                Assert.Equal(expected.Name, actual.Name);
+                Assert.Equal(expected.Description, actual.Description);
+
+            }
         }
+        #endregion
 
-
+        #region Retrieve_WithValidEntityID_ReturnsAValidEntity
         [Fact]
         public void Retrieve_WithValidEntityID_ReturnsAValidEntity()
         {
             //Arrange
-            var context = new ECommerceDbContext();
-            var category = new Category
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            var expected = new Category
+            {
+                Name = "Shoes",
+                Description = "Shoes Department",
+                IsActive = true
+            };
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                var sut = new CategoryRepository(context);
+                sut.Create(expected);
+            }
+            using (var context = new ECommerceDbContext(options))
+            {
+                var sut = new CategoryRepository(context);
+
+                //ACT
+                var actual = sut.Retrieve(expected.ID);
+                //Assert
+                Assert.NotNull(actual);
+
+                Assert.Equal(expected.Name, actual.Name);
+                Assert.Equal(expected.Description, actual.Description);
+            }
+        }
+        #endregion
+
+        #region Retrieve_WithNonExistentEntityID_ReturnsNull
+        [Fact]
+        public void Retrieve_WithNonExistentEntityID_ReturnsNull()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //Arrange
+                var sut = new CategoryRepository(context);
+                //Act
+                var actual = sut.Retrieve(-1);
+                Assert.Null(actual);
+            }
+        }
+        #endregion
+
+        #region Retrieve_WithSkipAndCount_ReturnsTheCorrectPage
+        [Fact]
+        public void Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //Arrange
+                for (var i = 1; i < 20; i += 1)
+                {
+                    context.Categories.Add(new Category
+                    {
+                        Name = string.Format("Category {0}", i),
+                        Description = string.Format("Decription {0}", i)
+                    });
+                }
+                context.SaveChanges();
+            }
+
+            //Act and Assert
+            using (var context = new ECommerceDbContext(options))
+            {
+                var sut = new CategoryRepository(context);
+
+                var list = sut.Retrieve(5, 5);
+                Assert.True(list.Count() == 5);
+            }
+        }
+        #endregion
+
+        #region Delete_WithValidEntity_ShouldRemoveData_AndCheckIfDataIsNotNull
+        [Fact]
+        public void Delete_WithValidEntity_ShouldRemoveData_AndCheckIfDataIsNotNull()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            var entity = new Category
             {
                 Name = "Shoes",
                 Description = "Shoes Department"
             };
-            //Act
-            var sut = new CategoryRepository(context);
-            sut.Create(category);
-            //Assert
-            var actual = sut.Retrieve(category.ID);
-            Assert.NotNull(actual);
-
-            sut.Delete(actual.ID);
-
-        }
-
-        [Fact]
-        public void Retrieve_WithNonExistentEntityID_ReturnsNull()
-        {
-            var context = new ECommerceDbContext();
-            var sut = new CategoryRepository(context);
-            
-
-            var actual = sut.Retrieve(-1);
-            Assert.Null(actual);
-        }
-        [Fact]
-        public void Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
-        {
-            //Arrange
-            var context = new ECommerceDbContext();
-            var sut = new CategoryRepository(context);
-            for(var i=1; i<20; i+=1)
+            using (var context = new ECommerceDbContext(options))
             {
-                sut.Create(new Category
-                {
-                    Name = string.Format("Category {0}", i),
-                    Description = string.Format("Decription {0}", i)
-                });
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //Arrange
+                context.Categories.Add(entity);
+                context.SaveChanges();
             }
-            //Act
-            var list = sut.Retrieve(5, 5);
-            //Assert
-            Assert.True(list.Count() == 5);
 
-            list = sut.Retrieve(0, Int32.MaxValue);
-            list.All(c => { sut.Delete(c.ID); return true; });
-        }
-        [Fact]
-        public void Delete_WithValidEntity_ShouldRemoveData_AndCheckIfDataIsNowNull()
-        {
-            //Arrange
-            var context = new ECommerceDbContext();
-            var sut = new CategoryRepository(context);
-            var category = new Category
+            using (var context = new ECommerceDbContext(options))
             {
-                Name = "Kids Shoes",
-                Description = "Kids Department"
-            };
-            sut.Create(category);
-            //Act
-
-            var entity = sut.Retrieve(category.ID);
-            Assert.NotNull(entity);
-
-            //Assert
-            var actual = sut.Retrieve(category.ID);
-            sut.Delete(actual.ID);
-            Assert.NotNull(actual);
-
-
-
+                var sut = new CategoryRepository(context);
+                //Act
+                sut.Delete(entity.ID);
+                //Assert
+                entity = context.Categories.Find(entity.ID);
+                Assert.Null(entity);
+            }
         }
+        #endregion
+
+        #region Update_WithValidEntity_ShouldChangeCurrentData
         [Fact]
-        public void Update_CategoryWithValidID_ShouldChangeCurrentData()
+        public void Update_WithValidEntity_ShouldChangeCurrentData()
         {
-            //Arrange
-            var context = new ECommerceDbContext();
-            var sut = new CategoryRepository(context);
-            var category = new Category
+            var connectionBuilder = new SqliteConnectionStringBuilder()
             {
-                Name = "Kids Shoes",
-                Description = "Kids Department"
+                DataSource = ":memory:"
             };
-            sut.Create(category);
-            //Act
-            var entity = sut.Retrieve(category.ID);
-            var updatedName = "New Shoes";
-            entity.Name = updatedName;
-            var updatedDescription ="New Shoes Department";
-            entity.Description = updatedDescription;
-            
-            
-            sut.Update(entity.ID, entity);
-            var updatedEntity = sut.Retrieve(category.ID);
-            //Arrange
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
 
-            Assert.Equal(updatedName, updatedEntity.Name);
-            Assert.Equal(updatedDescription, updatedEntity.Description);
+            var expectName = "Updated Category";
+            var expectDescription = "Updated Description";
+            int expectedID = 0;
 
-            sut.Delete(entity.ID);
-            Assert.NotNull(entity);
+            using(var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //FirstArrange
+                var entity = new Category
+                {
+                    Name = "Old Category",
+                    Description = "old Description"
+                };
 
+                context.Categories.Add(entity);
+                context.SaveChanges();
+                expectedID = entity.ID;
+            }
+            using (var context = new ECommerceDbContext(options))
+            {
+    
+                //SecondArrange
+                var entity = context.Categories.Find(expectedID);
+               
+                entity.Name = expectName;
+                entity.Description = expectDescription;
 
+                var sut = new CategoryRepository(context);
+                //Act
+                sut.Update(entity.ID, entity);
 
-
+                var actual = context.Categories.Find(expectedID);
+                //Assert
+                Assert.Equal(expectName, actual.Name);
+                Assert.Equal(expectDescription, actual.Description);
+            }
         }
-
+        #endregion
     }
 }
