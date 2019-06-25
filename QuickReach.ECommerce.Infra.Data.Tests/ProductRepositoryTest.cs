@@ -316,7 +316,59 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
 
             //    categorySut.Delete(category.ID);
             //}
-            #endregion
+            
         }
+        #endregion
+        #region Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
+        [Fact]
+        public void Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            var category = new Category
+            {
+                Name = "Shoes",
+                Description = "Shoe Department",
+                IsActive = true
+            };
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                context.Categories.Add(category);
+                context.SaveChanges();
+            }
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //Arrange
+                for (var i = 1; i < 20; i += 1)
+                {
+                    context.Products.Add(new Product
+                    {
+                        Name = string.Format("Add Products {0}", i),
+                        Description = string.Format("Add Description {0}", i),
+                        Price = decimal.Add(100, i),
+                        CategoryID = category.ID,
+                        ImageURL = string.Format("ImageURL {0}", i)
+                    });
+                }
+                context.SaveChanges();
+            }
+            using (var context = new ECommerceDbContext(options))
+            {
+                //Act
+                var sut = new ProductRepository(context);
+                var list = sut.Retrieve(5, 5);
+                //Arrange
+                Assert.True(list.Count() == 5);
+            }
+        }
+        #endregion
     }
 }
