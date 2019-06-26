@@ -239,7 +239,7 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
 
         #region Delete_CategorybutProductHasData_ShouldThrowandException
         [Fact]
-        public void Delete_CategorybutProductHasData_ShouldThrowandException()
+        public void Delete_CategorybutProductHasData_ShouldThrowException()
         {
             
             var connectionBuilder = new SqliteConnectionStringBuilder()

@@ -36,10 +36,13 @@ namespace QuickReach.ECommerce.Infra.Data.Repositories
         }
         public override void Delete(int entityID)
         {
-            
-
-            var entityToRemove = Retrieve(entityID);
-            this.context.Remove<Category>(entityToRemove);
+            var product = this.context.Products.Where(c => c.CategoryID == entityID);
+            if(product.Count() > 0)
+            {
+                throw new SystemException("Cannot delete this category if products are existing!");
+            }
+            var entoRemove = Retrieve(entityID);
+            this.context.Remove<Category>(entoRemove);
             this.context.SaveChanges();
         }
     }
