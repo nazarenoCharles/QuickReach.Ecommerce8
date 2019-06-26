@@ -99,6 +99,7 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             //categorySut.Delete(category.ID);
         }
         #endregion
+
         #region Update_WithValidEntity_ShouldUpdateRecordsOntoDatabase
         [Fact]
         public void Update_WithValidEntity_ShouldUpdateRecordsOntoDatabase()
@@ -216,6 +217,7 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             //    categoryRepo.Delete(category.ID);
         }
         #endregion
+
         #region Retrieve_WithNonExistentEntityID_ReturnsNull
         [Fact]
         public void Retrieve_WithNonExistentEntityID_ReturnsNull()
@@ -239,6 +241,7 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             }
         }
         #endregion
+
         #region DeleteProduct_WithValidData_ShouldRemoveIntoDatabase
         [Fact]
         public void DeleteProduct_WithValidData_ShouldRemoveIntoDatabase()
@@ -316,10 +319,11 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
 
             //    categorySut.Delete(category.ID);
             //}
-            
+
         }
         #endregion
-        #region Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
+
+        #region Retrieve_WithSkipAndCount_ReturnsTheCorrectPage
         [Fact]
         public void Retrieve_WithSkipAndCount_ReturnsTheCorrectPage()
         {
@@ -372,7 +376,50 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
                 Assert.True(list.Count() == 5);
             }
         }
+        #endregion
+        #region Create_ProductButDontHaveCategory_ShouldThrowAnExemption
+        [Fact]
+            public void Create_ProductButDontHaveCategory_ShouldThrowAnExemption()
+            {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            //ARRANGE
+            var category = new Category
+            {
+                Name = "Jacket",
+                Description = "Jacket Department"
+            };
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                context.Categories.Add(category);
+                context.SaveChanges();
+            }
+            var product = new Product
+            {
+                Name = "Ambitions One ok Rock Jacket",
+                Description = "Ambitions 2017 Ambitions Jacket",
+                CategoryID = category.ID,
+                Price = 4000,
+                ImageURL = "https://japan-discoveries.com/images/4/tops_one%20ok%20rock_17_ambtions%20hoodie%20jacket_02.jpg"
+            };
+            
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                var sut = new ProductRepository(context);
 
+                Assert.Throws<SystemException>(() => sut.Create(product));
+                   
+            }
+        }
         #endregion
     }
 }
+

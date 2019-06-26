@@ -236,5 +236,56 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             }
         }
         #endregion
+
+        #region Delete_CategorybutProductHasData_ShouldThrowandException
+        [Fact]
+        public void Delete_CategorybutProductHasData_ShouldThrowandException()
+        {
+            
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            //ARRANGE
+            var category = new Category
+            {
+                Name = "Cellphone",
+                Description = "Cellphone Department"
+            };
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                context.Categories.Add(category);
+                context.SaveChanges();
+            }
+            var product = new Product
+            {
+                Name = "IPhone X Max",
+                Description = "iPhone X Max 128GB Rose Gold",
+                Price = 50000,
+                CategoryID = category.ID,
+                ImageURL = "https://ss7.vzw.com/is/image/VerizonWireless/iPhoneX-Svr-back"
+            };
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                context.Products.Add(product);
+                context.SaveChanges();
+            }
+            using (var context = new ECommerceDbContext(options))
+            {
+                var sut = new CategoryRepository(context);
+                var actual = context.Categories.Find(category.ID);
+
+                Assert.Throws<SystemException>(() => sut.Delete(category.ID));
+
+            }
+
+        }
+        #endregion
     }
 }

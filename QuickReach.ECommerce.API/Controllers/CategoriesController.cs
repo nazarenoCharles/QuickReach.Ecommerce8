@@ -15,8 +15,8 @@ namespace QuickReach.ECommerce.API.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly ICategoryRepositry repository;
-        public CategoriesController(ICategoryRepositry repository)
+        private readonly ICategoryRepository repository;
+        public CategoriesController(ICategoryRepository repository)
         {
             this.repository = repository;
         }
@@ -28,6 +28,13 @@ namespace QuickReach.ECommerce.API.Controllers
             return Ok(categories);
 
         }
+        [HttpGet("{id}")]
+        public ActionResult GetCategoryWithProducts(int id)
+        {
+            var category = repository.Retrieve(id);
+            return Ok(category);
+
+        }
         [HttpPost]
         public IActionResult Post([FromBody] Category newCategory)
         {
@@ -36,7 +43,7 @@ namespace QuickReach.ECommerce.API.Controllers
                 return BadRequest(this);
             }
             this.repository.Create(newCategory);
-            return CreatedAtAction(nameof(this.Get), newCategory);
+            return CreatedAtAction(nameof(this.Get), new { id = newCategory.ID }, newCategory);
         }
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody] Category category)

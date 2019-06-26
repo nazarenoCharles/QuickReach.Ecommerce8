@@ -1,4 +1,5 @@
-﻿using QuickReach.ECommerce.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using QuickReach.ECommerce.Domain;
 using QuickReach.ECommerce.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace QuickReach.ECommerce.Infra.Data.Repositories
 {
-    public class CategoryRepository : RepositoryBase<Category>, ICategoryRepositry
+    public class CategoryRepository : RepositoryBase<Category>, ICategoryRepository
     {
         public CategoryRepository(ECommerceDbContext context) : base(context)
         {
@@ -23,7 +24,23 @@ namespace QuickReach.ECommerce.Infra.Data.Repositories
             .ToList();
 
             return result;
+        }
 
+        public override Category Retrieve(int entityID)
+        {
+            var entity = this.context.Categories.Include(c => c.Products)
+                .AsNoTracking()
+                .Where(c => c.ID == entityID)
+                .FirstOrDefault();
+            return entity;
+        }
+        public override void Delete(int entityID)
+        {
+            
+
+            var entityToRemove = Retrieve(entityID);
+            this.context.Remove<Category>(entityToRemove);
+            this.context.SaveChanges();
         }
     }
 }
