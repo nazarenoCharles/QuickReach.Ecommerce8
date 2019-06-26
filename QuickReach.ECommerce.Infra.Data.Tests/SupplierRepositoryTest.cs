@@ -188,4 +188,6 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
                 Assert.Null(actual);
             }
         }
+        #endregion
+    }
 }
