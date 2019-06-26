@@ -264,11 +264,11 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             }
             var product = new Product
             {
-                Name = "Superstar Adidas",
-                Description = "Adidas Classics",
+                Name = "New Superstar Adidas",
+                Description = "New Adidas Classics",
                 Price = 5000,
                 CategoryID = category.ID,
-                ImageURL = "superstar.jpeg"
+                ImageURL = "newsuperstar.jpeg"
             };
             using (var context = new ECommerceDbContext(options))
             {
@@ -367,8 +367,12 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
                 var list = sut.Retrieve(5, 5);
                 //Arrange
                 Assert.True(list.Count() == 5);
+                //AnotherArrange
+                list = sut.Retrieve(10, 5);
+                Assert.True(list.Count() == 5);
             }
         }
+
         #endregion
     }
 }

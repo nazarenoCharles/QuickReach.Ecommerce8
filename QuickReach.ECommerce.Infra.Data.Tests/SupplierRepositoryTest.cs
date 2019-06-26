@@ -84,7 +84,7 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
                 var sut = new SupplierRepository(context);
                 //Act
                 sut.Update(supplier.ID, supplier);
-                
+
                 var actual = context.Suppliers.Find(expectedID);
                 //Assert
                 Assert.Equal(expectedName, actual.Name);
@@ -127,13 +127,65 @@ namespace QuickReach.ECommerce.Infra.Data.Tests
             }
         }
         #endregion
+        #region Delete_WithValidEntity_ShouldRemoveData_AndCheckIfDataIsNotNull
+        [Fact]
+        public void Delete_WithValidEntity_ShouldRemoveData_AndCheckIfDataIsNotNull()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
+            var entity = new Supplier
+            {
+                Name = "Adidas Supplier",
+                Description = "Supplier for Shoes",
+                IsActive = true
+            };
 
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+                //Arrange
+                context.Suppliers.Add(entity);
+                context.SaveChanges();
+            }
 
-        //[Fact]
-        //public void Retrieve_WithNOnExistingEntityID_ReturnsNull()
-        //{
-        //    var options = new DbContextOptionsBuilder<ECommerceDbContext>().UserInMemoryDatabase($"CategoryForTest{Guid.NewGuid()}").Options;
-        //}
+            using (var context = new ECommerceDbContext(options))
+            {
+                var sut = new SupplierRepository(context);
+                //Act
+                sut.Delete(entity.ID);
+                //Assert
+                entity = context.Suppliers.Find(entity.ID);
+                Assert.Null(entity);
+            }
+            #endregion
+        }
+        #region Retrieve_WithNonExistentEntityID_ReturnsNul
+        [Fact]
+        public void Retrieve_WithNonExistentEntityID_ReturnsNull()
+        {
+            var connectionBuilder = new SqliteConnectionStringBuilder()
+            {
+                DataSource = ":memory:"
+            };
+            var connection = new SqliteConnection(connectionBuilder.ConnectionString);
+            var options = new DbContextOptionsBuilder<ECommerceDbContext>().UseSqlite(connection).Options;
 
-    }
+            using (var context = new ECommerceDbContext(options))
+            {
+                context.Database.OpenConnection();
+                context.Database.EnsureCreated();
+
+                //Arrange
+                var sut = new SupplierRepository(context);
+
+                //Act
+                var actual = sut.Retrieve(-1);
+                Assert.Null(actual);
+            }
+        }
 }
