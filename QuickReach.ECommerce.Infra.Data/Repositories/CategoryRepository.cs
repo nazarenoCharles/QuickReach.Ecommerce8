@@ -28,22 +28,23 @@ namespace QuickReach.ECommerce.Infra.Data.Repositories
 
         public override Category Retrieve(int entityID)
         {
-            var entity = this.context.Categories.Include(c => c.Products)
-                .AsNoTracking()
+            var categoryEntity = this.context.Categories.Include(c => c.Products)
+                //.AsNoTracking()
                 .Where(c => c.ID == entityID)
                 .FirstOrDefault();
-            return entity;
+            return categoryEntity;
         }
         public override void Delete(int entityID)
         {
-            var product = this.context.Products.Where(c => c.CategoryID == entityID);
-            if(product.Count() > 0)
+            var categoryValidation = this.context.Products.Where(c => c.CategoryID == entityID);
+            if (categoryValidation.Count() != 0)
             {
                 throw new SystemException("Cannot delete this category if products are existing!");
             }
-            var entoRemove = Retrieve(entityID);
-            this.context.Remove<Category>(entoRemove);
+            var entitytoRemove = Retrieve(entityID);
+            this.context.Remove<Category>(entitytoRemove);
             this.context.SaveChanges();
+
         }
     }
 }

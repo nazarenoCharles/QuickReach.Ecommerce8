@@ -19,6 +19,7 @@ namespace QuickReach.ECommerce.Infra.Data.Repositories
         {
             var result = this.context.Products.Where(c => c.Name.Contains(search)
             || c.Description.Contains(search))
+            .AsNoTracking()
             .Skip(skip)
             .Take(count)
             .ToList();
@@ -34,11 +35,12 @@ namespace QuickReach.ECommerce.Infra.Data.Repositories
         }
         public override Product Create(Product newProduct)
         {
-            var category = this.context.Categories.Where(c => c.ID == newProduct.CategoryID).FirstOrDefault();
-            if(category == null)
+            var Nocategory = this.context.Categories.Where(c => c.ID == newProduct.CategoryID).FirstOrDefault();
+            if (Nocategory == null)
             {
                 throw new SystemException("You cannot create products if that category is missing!");
             }
+
             this.context.Set<Product>().Add(newProduct);
             this.context.SaveChanges();
             return newProduct;
